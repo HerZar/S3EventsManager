@@ -21,11 +21,6 @@ public class S3EventServiceImpl implements S3EventService {
     }
 
     @Override
-    public Flux<S3Event> get(String bucketName) {
-        return s3EventCollection.get(bucketName);
-    }
-
-    @Override
     public Flux<S3Event> get(String bucketName, GetEventsRequest pageRequest) {
         return s3EventCollection.get(bucketName, pageRequest);
     }

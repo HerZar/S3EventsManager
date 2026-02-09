@@ -28,8 +28,8 @@ public class S3EventController {
     public Flux<S3EventDto> get(@PathVariable String bucketName,
                                 @RequestParam(defaultValue = "0") Integer page,
                                 @RequestParam(defaultValue = "10") Integer size) {
-        var request = GetEventsRequestMapper.toGetEventsRequest(page, size);
-        return service.get(bucketName, request)
+        return Mono.just(GetEventsRequestMapper.toGetEventsRequest(page, size))
+                .flatMapMany(request -> service.get(bucketName, request))
                 .map(S3EventMapper::toS3EventDto);
     }
 

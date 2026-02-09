@@ -25,13 +25,6 @@ public class S3EventCollectionImpl implements S3EventCollection {
     }
 
     @Override
-    public Flux<S3Event> get(String bucketName) {
-        Query query = new Query(Criteria.where("bucketName").is(bucketName));
-        return reactiveMongoTemplate.find(query, S3EventDocument.class)
-                .map(S3EventDocumentMapper::toS3Event);
-    }
-
-    @Override
     public Flux<S3Event> get(String bucketName, GetEventsRequest pageRequest) {
         Query query = new Query(Criteria.where("bucketName").is(bucketName));
         query.with(Sort.by(Sort.Direction.DESC, "time"));
@@ -43,19 +36,21 @@ public class S3EventCollectionImpl implements S3EventCollection {
 
     @Override
     public Mono<Boolean> exist(S3Event event) {
-        S3EventDocument document = S3EventDocumentMapper.toS3EventDocument(event);
-        Query query = new Query(
-            Criteria.where("bucketName").is(document.getBucketName())
-                .and("objectKey").is(document.getObjectKey())
-                .and("type").is(document.getType())
-        );
-        return reactiveMongoTemplate.exists(query, S3EventDocument.class);
+        return Mono.fromCallable(() -> S3EventDocumentMapper.toS3EventDocument(event))
+                .flatMap(document -> {
+                    Query query = new Query(
+                        Criteria.where("bucketName").is(document.getBucketName())
+                            .and("objectKey").is(document.getObjectKey())
+                            .and("type").is(document.getType())
+                    );
+                    return reactiveMongoTemplate.exists(query, S3EventDocument.class);
+                });
     }
 
     @Override
     public Mono<String> save(S3Event event) {
-        S3EventDocument document = S3EventDocumentMapper.toS3EventDocument(event);
-        return reactiveMongoTemplate.save(document)
+        return Mono.fromCallable(() -> S3EventDocumentMapper.toS3EventDocument(event))
+                .flatMap(document -> reactiveMongoTemplate.save(document))
                 .map(savedDocument -> savedDocument.getId().toString());
     }
 }

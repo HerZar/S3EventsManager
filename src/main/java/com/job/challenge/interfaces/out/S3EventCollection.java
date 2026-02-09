@@ -7,8 +7,6 @@ import reactor.core.publisher.Mono;
 
 public interface S3EventCollection {
 
-    Flux<S3Event> get(String bucketName);
-
     Flux<S3Event> get(String bucketName, GetEventsRequest pageRequest);
 
     Mono<Boolean> exist(S3Event event);

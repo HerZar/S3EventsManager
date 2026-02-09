@@ -6,7 +6,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface S3EventService {
-    Flux<S3Event> get(String bucketName);
 
     Flux<S3Event> get(String bucketName, GetEventsRequest pageRequest);
 
