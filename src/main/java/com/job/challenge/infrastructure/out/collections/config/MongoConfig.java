@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.index.ReactiveIndexOperations;
 import reactor.core.publisher.Mono;
 
-import jakarta.annotation.PostConstruct;
+import javax.annotation.PostConstruct;
 
 @Configuration
 public class MongoConfig {
@@ -54,7 +54,7 @@ public class MongoConfig {
                         .named("bucketName_1_objectKey_1_type_1")
                         .unique();
                     
-                    return indexOps.createIndex(index).then();
+                    return indexOps.ensureIndex(index).then();
                 }
                 return Mono.empty();
             });
@@ -71,7 +71,7 @@ public class MongoConfig {
                         .on("time", Sort.Direction.DESC)
                         .named("time_1");
                     
-                    return indexOps.createIndex(index).then();
+                    return indexOps.ensureIndex(index).then();
                 }
                 return Mono.empty();
             });
