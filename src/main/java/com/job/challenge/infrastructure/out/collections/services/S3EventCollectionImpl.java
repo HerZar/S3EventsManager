@@ -4,8 +4,9 @@ import com.job.challenge.application.domain.S3Event;
 import com.job.challenge.infrastructure.out.collections.documents.S3EventDocument;
 import com.job.challenge.infrastructure.out.collections.mappers.S3EventDocumentMapper;
 import com.job.challenge.interfaces.out.S3EventCollection;
-import org.bson.types.ObjectId;
+import com.job.challenge.application.domain.GetEventsRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -26,6 +27,16 @@ public class S3EventCollectionImpl implements S3EventCollection {
     @Override
     public Flux<S3Event> get(String bucketName) {
         Query query = new Query(Criteria.where("bucketName").is(bucketName));
+        return reactiveMongoTemplate.find(query, S3EventDocument.class)
+                .map(S3EventDocumentMapper::toS3Event);
+    }
+
+    @Override
+    public Flux<S3Event> get(String bucketName, GetEventsRequest pageRequest) {
+        Query query = new Query(Criteria.where("bucketName").is(bucketName));
+        query.with(Sort.by(Sort.Direction.DESC, "time"));
+        query.skip((long) pageRequest.getPage() * pageRequest.getSize());
+        query.limit(pageRequest.getSize());
         return reactiveMongoTemplate.find(query, S3EventDocument.class)
                 .map(S3EventDocumentMapper::toS3Event);
     }

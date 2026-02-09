@@ -4,6 +4,7 @@ import com.job.challenge.application.domain.S3Event;
 import com.job.challenge.application.exceptions.ConflictException;
 import com.job.challenge.interfaces.in.S3EventService;
 import com.job.challenge.interfaces.out.S3EventCollection;
+import com.job.challenge.application.domain.GetEventsRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -22,6 +23,11 @@ public class S3EventServiceImpl implements S3EventService {
     @Override
     public Flux<S3Event> get(String bucketName) {
         return s3EventCollection.get(bucketName);
+    }
+
+    @Override
+    public Flux<S3Event> get(String bucketName, GetEventsRequest pageRequest) {
+        return s3EventCollection.get(bucketName, pageRequest);
     }
 
     @Override
