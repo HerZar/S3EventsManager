@@ -11,11 +11,11 @@ public class ConflictException extends ServiceException{
         super(message, DEFAULT_ERROR_CODE, HTTP_STATUS);
     }
 
-    public ConflictException(String message, String errorCode, HttpStatus status) {
-        super(message, errorCode, status);
+    public ConflictException(String message, String errorCode) {
+        super(message, errorCode, HTTP_STATUS);
     }
 
-    public ConflictException(String message, String errorCode, Throwable cause, HttpStatus status) {
-        super(message, errorCode, cause, status);
+    public ConflictException(String message, String errorCode, Throwable cause) {
+        super(message, errorCode, cause, HTTP_STATUS);
     }
 }

@@ -24,4 +24,16 @@ public abstract class ServiceException extends RuntimeException {
         this.errorCode = errorCode;
         this.timeStamp = LocalDateTime.now();
     }
+
+    public HttpStatus getStatus() {
+        return status;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public LocalDateTime getTimeStamp() {
+        return timeStamp;
+    }
 }
