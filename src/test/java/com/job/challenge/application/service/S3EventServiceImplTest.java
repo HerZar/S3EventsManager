@@ -5,6 +5,7 @@ import com.job.challenge.application.domain.GetEventsRequest;
 import com.job.challenge.application.domain.S3Event;
 import com.job.challenge.application.exceptions.ConflictException;
 import com.job.challenge.interfaces.out.S3EventCollection;
+import com.job.challenge.interfaces.out.S3EventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,9 @@ class S3EventServiceImplTest {
 
     @Mock
     private S3EventCollection s3EventCollection;
+
+    @Mock
+    private S3EventPublisher s3EventPublisher;
 
     @InjectMocks
     private S3EventServiceImpl s3EventService;
@@ -74,6 +78,7 @@ class S3EventServiceImplTest {
     void shouldCreateEventWhenItDoesNotExist() {
         when(s3EventCollection.exist(testEvent)).thenReturn(Mono.just(false));
         when(s3EventCollection.save(testEvent)).thenReturn(Mono.just("1"));
+        when(s3EventPublisher.publish(testEvent)).thenReturn(Mono.empty());
 
         StepVerifier.create(s3EventService.create(testEvent))
                 .expectNext("1")
@@ -107,7 +112,22 @@ class S3EventServiceImplTest {
         when(s3EventCollection.save(testEvent)).thenReturn(Mono.error(new RuntimeException("Save error")));
 
         StepVerifier.create(s3EventService.create(testEvent))
-                .expectError(RuntimeException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof ConflictException &&
+                    throwable.getMessage().contains("Failed operation save:") &&
+                    ((ConflictException) throwable).getErrorCode().equals("DATABASE_SAVE_ERROR"))
+                .verify();
+    }
+
+    @Test
+    @DisplayName("Should propagate error when publisher fails")
+    void shouldPropagateErrorWhenPublisherFails() {
+        when(s3EventCollection.exist(testEvent)).thenReturn(Mono.just(false));
+        when(s3EventCollection.save(testEvent)).thenReturn(Mono.just("1"));
+        when(s3EventPublisher.publish(testEvent)).thenReturn(Mono.error(new ConflictException("Publisher error")));
+
+        StepVerifier.create(s3EventService.create(testEvent))
+                .expectError(ConflictException.class)
                 .verify();
     }
 }

@@ -5,17 +5,19 @@ import com.job.challenge.application.domain.GetEventsRequest;
 import com.job.challenge.application.domain.S3Event;
 import com.job.challenge.infrastructure.out.collections.documents.EventTypeDocument;
 import com.job.challenge.infrastructure.out.collections.documents.S3EventDocument;
+import com.job.challenge.infrastructure.out.collections.services.strategy.ExistenceStrategy;
+import com.job.challenge.infrastructure.out.collections.services.strategy.ExistenceStrategyFactory;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.job.challenge.infrastructure.out.collections.repositories.S3EventReactiveRepository;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.domain.Pageable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -33,7 +35,13 @@ import static org.mockito.Mockito.when;
 class S3EventCollectionImplTest {
 
     @Mock
-    private ReactiveMongoTemplate reactiveMongoTemplate;
+    private S3EventReactiveRepository s3EventReactiveRepository;
+
+    @Mock
+    private ExistenceStrategyFactory existenceStrategyFactory;
+
+    @Mock
+    private ExistenceStrategy existenceStrategy;
 
     @InjectMocks
     private S3EventCollectionImpl s3EventCollection;
@@ -68,7 +76,7 @@ class S3EventCollectionImplTest {
     @Test
     @DisplayName("Should return events when get is called")
     void shouldReturnEventsWhenGetIsCalled() {
-        when(reactiveMongoTemplate.find(any(Query.class), eq(S3EventDocument.class)))
+        when(s3EventReactiveRepository.findByBucketNameOrderByTimeDesc(eq("test-bucket"), any(Pageable.class)))
                 .thenReturn(Flux.just(testDocument));
 
         StepVerifier.create(s3EventCollection.get("test-bucket", pageRequest))
@@ -79,17 +87,19 @@ class S3EventCollectionImplTest {
                 )
                 .verifyComplete();
 
-        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
-        verify(reactiveMongoTemplate).find(queryCaptor.capture(), eq(S3EventDocument.class));
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(s3EventReactiveRepository).findByBucketNameOrderByTimeDesc(eq("test-bucket"), pageableCaptor.capture());
         
-        Query capturedQuery = queryCaptor.getValue();
-        assertNotNull(capturedQuery);
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertNotNull(capturedPageable);
+        assertEquals(0, capturedPageable.getPageNumber());
+        assertEquals(10, capturedPageable.getPageSize());
     }
 
     @Test
     @DisplayName("Should return empty flux when no events found")
     void shouldReturnEmptyFluxWhenNoEventsFound() {
-        when(reactiveMongoTemplate.find(any(Query.class), eq(S3EventDocument.class)))
+        when(s3EventReactiveRepository.findByBucketNameOrderByTimeDesc(eq("test-bucket"), any(Pageable.class)))
                 .thenReturn(Flux.empty());
 
         StepVerifier.create(s3EventCollection.get("test-bucket", pageRequest))
@@ -99,24 +109,24 @@ class S3EventCollectionImplTest {
     @Test
     @DisplayName("Should return true when event exists")
     void shouldReturnTrueWhenEventExists() {
-        when(reactiveMongoTemplate.exists(any(Query.class), eq(S3EventDocument.class)))
+        when(existenceStrategyFactory.getStrategy(any(EventTypeDocument.class)))
+                .thenReturn(existenceStrategy);
+        when(existenceStrategy.checkExistence(any(S3EventDocument.class), eq(s3EventReactiveRepository)))
                 .thenReturn(Mono.just(true));
 
         StepVerifier.create(s3EventCollection.exist(testEvent))
                 .expectNext(true)
                 .verifyComplete();
 
-        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
-        verify(reactiveMongoTemplate).exists(queryCaptor.capture(), eq(S3EventDocument.class));
-        
-        Query capturedQuery = queryCaptor.getValue();
-        assertNotNull(capturedQuery);
+        verify(existenceStrategy).checkExistence(any(S3EventDocument.class), eq(s3EventReactiveRepository));
     }
 
     @Test
     @DisplayName("Should return false when event does not exist")
     void shouldReturnFalseWhenEventDoesNotExist() {
-        when(reactiveMongoTemplate.exists(any(Query.class), eq(S3EventDocument.class)))
+        when(existenceStrategyFactory.getStrategy(any(EventTypeDocument.class)))
+                .thenReturn(existenceStrategy);
+        when(existenceStrategy.checkExistence(any(S3EventDocument.class), eq(s3EventReactiveRepository)))
                 .thenReturn(Mono.just(false));
 
         StepVerifier.create(s3EventCollection.exist(testEvent))
@@ -137,7 +147,7 @@ class S3EventCollectionImplTest {
                 .objectSize(testDocument.getObjectSize())
                 .build();
 
-        when(reactiveMongoTemplate.save(any(S3EventDocument.class)))
+        when(s3EventReactiveRepository.save(any(S3EventDocument.class)))
                 .thenReturn(Mono.just(savedDocument));
 
         StepVerifier.create(s3EventCollection.save(testEvent))
@@ -145,7 +155,7 @@ class S3EventCollectionImplTest {
                 .verifyComplete();
 
         ArgumentCaptor<S3EventDocument> documentCaptor = ArgumentCaptor.forClass(S3EventDocument.class);
-        verify(reactiveMongoTemplate).save(documentCaptor.capture());
+        verify(s3EventReactiveRepository).save(documentCaptor.capture());
         
         S3EventDocument capturedDocument = documentCaptor.getValue();
         assertEquals("test-bucket", capturedDocument.getBucketName());
@@ -173,7 +183,7 @@ class S3EventCollectionImplTest {
                 .objectSize(1024)
                 .build();
 
-        when(reactiveMongoTemplate.save(any(S3EventDocument.class)))
+        when(s3EventReactiveRepository.save(any(S3EventDocument.class)))
                 .thenReturn(Mono.just(savedDocument));
 
         StepVerifier.create(s3EventCollection.save(eventWithoutId))
@@ -184,7 +194,9 @@ class S3EventCollectionImplTest {
     @Test
     @DisplayName("Should propagate error when exists check fails")
     void shouldPropagateErrorWhenExistsCheckFails() {
-        when(reactiveMongoTemplate.exists(any(Query.class), eq(S3EventDocument.class)))
+        when(existenceStrategyFactory.getStrategy(any(EventTypeDocument.class)))
+                .thenReturn(existenceStrategy);
+        when(existenceStrategy.checkExistence(any(S3EventDocument.class), eq(s3EventReactiveRepository)))
                 .thenReturn(Mono.error(new RuntimeException("Database error")));
 
         StepVerifier.create(s3EventCollection.exist(testEvent))
@@ -195,7 +207,7 @@ class S3EventCollectionImplTest {
     @Test
     @DisplayName("Should propagate error when save fails")
     void shouldPropagateErrorWhenSaveFails() {
-        when(reactiveMongoTemplate.save(any(S3EventDocument.class)))
+        when(s3EventReactiveRepository.save(any(S3EventDocument.class)))
                 .thenReturn(Mono.error(new RuntimeException("Save error")));
 
         StepVerifier.create(s3EventCollection.save(testEvent))
@@ -206,7 +218,7 @@ class S3EventCollectionImplTest {
     @Test
     @DisplayName("Should propagate error when find fails")
     void shouldPropagateErrorWhenFindFails() {
-        when(reactiveMongoTemplate.find(any(Query.class), eq(S3EventDocument.class)))
+        when(s3EventReactiveRepository.findByBucketNameOrderByTimeDesc(eq("test-bucket"), any(Pageable.class)))
                 .thenReturn(Flux.error(new RuntimeException("Find error")));
 
         StepVerifier.create(s3EventCollection.get("test-bucket", pageRequest))

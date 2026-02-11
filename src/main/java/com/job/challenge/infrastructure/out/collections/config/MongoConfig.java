@@ -36,40 +36,19 @@ public class MongoConfig {
     }
 
     private Mono<Void> createIndexIfNotExists() {
-        return createCompoundIndexIfNotExists()
-            .then(createTimeIndexIfNotExists());
-    }
-
-    private Mono<Void> createCompoundIndexIfNotExists() {
         ReactiveIndexOperations indexOps = reactiveMongoTemplate.indexOps("s3_events");
         
         return indexOps.getIndexInfo()
-            .any(indexInfo -> "bucketName_1_objectKey_1_type_1".equals(indexInfo.getName()))
+            .any(indexInfo -> "bucketName_1_objectKey_1_type_1_time_-1".equals(indexInfo.getName()))
             .flatMap(indexExists -> {
                 if (!indexExists) {
                     Index index = new Index()
                         .on("bucketName", Sort.Direction.ASC)
                         .on("objectKey", Sort.Direction.ASC)
                         .on("type", Sort.Direction.ASC)
-                        .named("bucketName_1_objectKey_1_type_1")
-                        .unique();
-                    
-                    return indexOps.ensureIndex(index).then();
-                }
-                return Mono.empty();
-            });
-    }
-
-    private Mono<Void> createTimeIndexIfNotExists() {
-        ReactiveIndexOperations indexOps = reactiveMongoTemplate.indexOps("s3_events");
-        
-        return indexOps.getIndexInfo()
-            .any(indexInfo -> "time_1".equals(indexInfo.getName()))
-            .flatMap(indexExists -> {
-                if (!indexExists) {
-                    Index index = new Index()
                         .on("time", Sort.Direction.DESC)
-                        .named("time_1");
+                        .named("bucketName_1_objectKey_1_type_1_time_1")
+                        .unique();
                     
                     return indexOps.ensureIndex(index).then();
                 }
