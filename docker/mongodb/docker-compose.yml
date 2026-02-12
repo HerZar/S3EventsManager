@@ -3,7 +3,8 @@ version: '3.8'
 services:
   mongodb:
     build: .
-    container_name: mongodb-8.2.4
+    image: challenge-db-image
+    container_name: challenge-db
     ports:
       - "27028:27028"
     volumes:

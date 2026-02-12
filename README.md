@@ -29,14 +29,13 @@ Para ejecutar esta aplicación, necesitas tener instalados:
 ### MongoDB con Docker Compose
 
 Para generar el contenedor Docker con MongoDB usando docker-compose:
-
 Desde el directorio raíz del proyecto, ejecuta:
 
 ```bash
 docker-compose -f docker/mongodb/docker-compose.yml up -d
 ```
 
-Esto creará un contenedor MongoDB 8.2.4 en el puerto 27028 con persistencia de datos.
+Esto creará un contenedor mongodb a partir de la imagen challenge-db en el puerto 27028 con persistencia de datos.
 
 ### Configuración de MongoDB
 
@@ -133,20 +132,36 @@ El servicio estará disponible en:
 
 - **GET /events/{bucketName}** - Obtener eventos de un bucket
   - Parámetros: `page` (número de página), `size` (tamaño de página)
-  - Ejemplo: `GET /events/my-bucket?page=0&size=10`
+  - Ejemplo: 
+
+``` 
+curl --location 'http://localhost:8080/api/v1/s3-events/zonda-data-bucket-2?page=0&size=100'
+```
 
 - **POST /events** - Crear un nuevo evento
   - Body: JSON con el evento S3
-  - Ejemplo: 
-    ```json
-    {
-      "bucketName": "my-bucket",
-      "objectKey": "path/to/file.txt",
-      "type": "OBJECT_CREATED",
-      "time": "2024-01-25T14:00:00Z",
-      "objectSize": 1024
-    }
+    - Ejemplo: 
+      ```json
+      {
+            "bucketName": "zonda-data-bucket",
+            "objectKey": "reports/daily/report_2024-01-33.csv",
+            "eventType": "OBJECT_UPDATED",
+            "eventTime": "2025-07-30T14:04:00Z",
+            "objectSize": 2048
+      }
     ```
+
+```
+curl --location 'http://localhost:8080/api/v1/s3-events' \
+--header 'Content-Type: application/json' \
+--data '{
+"bucketName": "zonda-data-bucket-2",
+"objectKey": "reports/daily/report_2024-01-33.csv",
+"eventType": "OBJECT_UPDATED",
+"eventTime": "2025-07-30T14:04:00Z",
+"objectSize": 2048
+}'
+```
 
 ## Facilidad de ejecución
 
