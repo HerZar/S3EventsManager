@@ -279,7 +279,7 @@ Esto proporciona resiliencia ante fallos temporales de red o de AWS SQS.
 - SQL: UPDATE events SET data=?, version=version+1 WHERE id=? AND version=?
 - Si affected_rows=0: otro proceso modificó
 
-## Distributed Locks
+### Distributed Locks
 - Implementación con Redis: SET lock_key resource_id NX PX 30000
 - NX: solo si no existe, PX: TTL de 30 segundos
 - Liberación: script Lua para verificar dueño antes de eliminar
