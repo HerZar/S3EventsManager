@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,18 +14,15 @@ import java.time.LocalDateTime;
 @Builder
 public class Message {
 
+    @JsonProperty("eventId")
+    private String eventId;
+
     @JsonProperty("bucketName")
     private String bucketName;
 
     @JsonProperty("objectKey")
     private String objectKey;
 
-    @JsonProperty("eventType")
-    private String eventType;
-
-    @JsonProperty("timestamp")
-    private LocalDateTime timestamp;
-
-    @JsonProperty("objectSize")
-    private Integer objectSize;
+    @JsonProperty("eventTime")
+    private String eventTime;
 }
