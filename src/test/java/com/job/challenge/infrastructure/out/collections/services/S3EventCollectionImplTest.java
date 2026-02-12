@@ -135,8 +135,8 @@ class S3EventCollectionImplTest {
     }
 
     @Test
-    @DisplayName("Should save event and return id")
-    void shouldSaveEventAndReturnId() {
+    @DisplayName("Should save event and return saved event")
+    void shouldSaveEventAndReturnSavedEvent() {
         ObjectId savedId = new ObjectId("507f1f77bcf86cd799439012");
         S3EventDocument savedDocument = S3EventDocument.builder()
                 .id(savedId)
@@ -147,11 +147,25 @@ class S3EventCollectionImplTest {
                 .objectSize(testDocument.getObjectSize())
                 .build();
 
+        S3Event expectedSavedEvent = S3Event.builder()
+                .id("507f1f77bcf86cd799439012")
+                .bucketName("test-bucket")
+                .objectKey("test-key")
+                .type(EventType.OBJECT_CREATED)
+                .time(testEvent.getTime())
+                .objectSize(1024)
+                .build();
+
         when(s3EventReactiveRepository.save(any(S3EventDocument.class)))
                 .thenReturn(Mono.just(savedDocument));
 
         StepVerifier.create(s3EventCollection.save(testEvent))
-                .expectNext("507f1f77bcf86cd799439012")
+                .expectNextMatches(savedEvent -> 
+                    savedEvent.getId().equals("507f1f77bcf86cd799439012") &&
+                    savedEvent.getBucketName().equals("test-bucket") &&
+                    savedEvent.getObjectKey().equals("test-key") &&
+                    savedEvent.getType() == EventType.OBJECT_CREATED
+                )
                 .verifyComplete();
 
         ArgumentCaptor<S3EventDocument> documentCaptor = ArgumentCaptor.forClass(S3EventDocument.class);
@@ -164,8 +178,8 @@ class S3EventCollectionImplTest {
     }
 
     @Test
-    @DisplayName("Should save event without id and return generated id")
-    void shouldSaveEventWithoutIdAndReturnGeneratedId() {
+    @DisplayName("Should save event without id and return saved event with generated id")
+    void shouldSaveEventWithoutIdAndReturnSavedEventWithGeneratedId() {
         S3Event eventWithoutId = S3Event.builder()
                 .bucketName("test-bucket")
                 .objectKey("test-key")
@@ -187,7 +201,12 @@ class S3EventCollectionImplTest {
                 .thenReturn(Mono.just(savedDocument));
 
         StepVerifier.create(s3EventCollection.save(eventWithoutId))
-                .expectNext("507f1f77bcf86cd799439013")
+                .expectNextMatches(savedEvent -> 
+                    savedEvent.getId().equals("507f1f77bcf86cd799439013") &&
+                    savedEvent.getBucketName().equals("test-bucket") &&
+                    savedEvent.getObjectKey().equals("test-key") &&
+                    savedEvent.getType() == EventType.OBJECT_CREATED
+                )
                 .verifyComplete();
     }
 

@@ -37,8 +37,8 @@ public class S3EventServiceImpl implements S3EventService {
                     }
                     return s3EventCollection.save(event)
                             .onErrorMap(e -> new ConflictException("Failed operation save: " + event, "DATABASE_SAVE_ERROR"))
-                            .flatMap(savedEventId -> s3EventPublisher.publish(event)
-                                    .thenReturn(savedEventId));
+                            .flatMap(savedEvent -> s3EventPublisher.publish(savedEvent)
+                                    .thenReturn(savedEvent.getId()));
                 });
     }
 }

@@ -42,9 +42,9 @@ public class S3EventCollectionImpl implements S3EventCollection {
     }
 
     @Override
-    public Mono<String> save(S3Event event) {
+    public Mono<S3Event> save(S3Event event) {
         S3EventDocument document = S3EventDocumentMapper.toS3EventDocument(event);
         return s3EventReactiveRepository.save(document)
-                .map(savedDocument -> savedDocument.getId().toString());
+                .map(S3EventDocumentMapper::toS3Event);
     }
 }

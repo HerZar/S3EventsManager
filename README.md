@@ -37,6 +37,13 @@ docker-compose -f docker/mongodb/docker-compose.yml up -d
 
 Esto creará un contenedor mongodb a partir de la imagen challenge-db en el puerto 27028 con persistencia de datos.
 
+### PARA BORRAR CONTENEDOR Y DATA
+Para contenedor e imagen docker ejecuta las siguientes sentencias en la terminal
+```
+docker rm challenge-db
+docker rmi challenge-db-image
+```
+
 ### Configuración de MongoDB
 
 La configuración se realiza automáticamente a través de `application.properties`:
@@ -102,6 +109,10 @@ aws.sqs.queue-url=https://sqs.<region>.amazonaws.com/TU_ACCOUNT_ID/s3-events
 aws.access-key=TU_ACCESS_KEY
 aws.secret-key=TU_SECRET_KEY
 aws.region=<region>
+
+# AWS Cloud Configuration (disable EC2 metadata detection)
+cloud.aws.region.static=<region>
+cloud.aws.credentials.instance-profile=false
 ```
 
 ### 2. Compilar el proyecto
@@ -135,7 +146,7 @@ El servicio estará disponible en:
   - Ejemplo: 
 
 ``` 
-curl --location 'http://localhost:8080/api/v1/s3-events/zonda-data-bucket-2?page=0&size=100'
+curl --location 'http://localhost:8080/api/v1/s3-events/zonda-data-bucket?page=0&size=100'
 ```
 
 - **POST /events** - Crear un nuevo evento
@@ -145,11 +156,15 @@ curl --location 'http://localhost:8080/api/v1/s3-events/zonda-data-bucket-2?page
       {
             "bucketName": "zonda-data-bucket",
             "objectKey": "reports/daily/report_2024-01-33.csv",
-            "eventType": "OBJECT_UPDATED",
+            "eventType": "OBJECT_UPDATED",  
             "eventTime": "2025-07-30T14:04:00Z",
             "objectSize": 2048
       }
-    ```
+      ```
+      eventType solo permite los siguiente valores
+    - OBJECT_CREATED
+    - OBJECT_UPDATED
+    - OBJECT_DELETED
 
 ```
 curl --location 'http://localhost:8080/api/v1/s3-events' \
@@ -162,19 +177,6 @@ curl --location 'http://localhost:8080/api/v1/s3-events' \
 "objectSize": 2048
 }'
 ```
-
-## Facilidad de ejecución
-
-Para facilitar la configuración y ejecución del proyecto, se ha incluido un archivo `docker-compose.yml` en la carpeta `docker/mongodb` que permite levantar rápidamente la base de datos MongoDB necesaria sin necesidad de configuración manual.
-
-Este docker-compose:
-- **Crea automáticamente** el contenedor MongoDB 8.2.4
-- **Configura el puerto 27028** para evitar conflictos con instancias locales
-- **Establece credenciales por defecto** (`events_user`/`events_password`)
-- **Mapea volumen persistente** para mantener los datos entre reinicios
-- **Inicializa la base de datos** `events` automáticamente
-
-Con esto, cualquier desarrollador puede tener el entorno de base de datos listo en segundos con un solo comando, eliminando barreras de configuración y permitiendo enfocarse en el desarrollo de la API.
 
 ## Decisiones de diseño
 

@@ -11,5 +11,5 @@ public interface S3EventCollection {
 
     Mono<Boolean> exist(S3Event event);
 
-    Mono<String> save(S3Event event);
+    Mono<S3Event> save(S3Event event);
 }

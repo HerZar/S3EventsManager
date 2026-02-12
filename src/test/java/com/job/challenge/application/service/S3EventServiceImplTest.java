@@ -76,9 +76,18 @@ class S3EventServiceImplTest {
     @Test
     @DisplayName("Should create event when it does not exist")
     void shouldCreateEventWhenItDoesNotExist() {
+        S3Event savedEvent = S3Event.builder()
+                .id("1")
+                .bucketName("test-bucket")
+                .objectKey("test-key")
+                .type(EventType.OBJECT_CREATED)
+                .time(testEvent.getTime())
+                .objectSize(1024)
+                .build();
+        
         when(s3EventCollection.exist(testEvent)).thenReturn(Mono.just(false));
-        when(s3EventCollection.save(testEvent)).thenReturn(Mono.just("1"));
-        when(s3EventPublisher.publish(testEvent)).thenReturn(Mono.empty());
+        when(s3EventCollection.save(testEvent)).thenReturn(Mono.just(savedEvent));
+        when(s3EventPublisher.publish(savedEvent)).thenReturn(Mono.empty());
 
         StepVerifier.create(s3EventService.create(testEvent))
                 .expectNext("1")
@@ -122,9 +131,18 @@ class S3EventServiceImplTest {
     @Test
     @DisplayName("Should propagate error when publisher fails")
     void shouldPropagateErrorWhenPublisherFails() {
+        S3Event savedEvent = S3Event.builder()
+                .id("1")
+                .bucketName("test-bucket")
+                .objectKey("test-key")
+                .type(EventType.OBJECT_CREATED)
+                .time(testEvent.getTime())
+                .objectSize(1024)
+                .build();
+        
         when(s3EventCollection.exist(testEvent)).thenReturn(Mono.just(false));
-        when(s3EventCollection.save(testEvent)).thenReturn(Mono.just("1"));
-        when(s3EventPublisher.publish(testEvent)).thenReturn(Mono.error(new ConflictException("Publisher error")));
+        when(s3EventCollection.save(testEvent)).thenReturn(Mono.just(savedEvent));
+        when(s3EventPublisher.publish(savedEvent)).thenReturn(Mono.error(new ConflictException("Publisher error")));
 
         StepVerifier.create(s3EventService.create(testEvent))
                 .expectError(ConflictException.class)
