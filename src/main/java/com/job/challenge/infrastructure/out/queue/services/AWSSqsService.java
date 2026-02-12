@@ -13,6 +13,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
+import java.time.Duration;
 
 @Service
 public class AWSSqsService {
@@ -49,6 +51,10 @@ public class AWSSqsService {
             } catch (Exception e) {
                 throw new ConflictException("Failed to publish message to SQS: " + e.getMessage(), "MESSAGE_PUBLISHING_ERROR");
             }
-        });
+        })
+        .retryWhen(Retry.fixedDelay(3, Duration.ofSeconds(1))
+                .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> 
+                    new ConflictException("Failed to publish message to SQS after 3 attempts", "MESSAGE_PUBLISHING_RETRY_EXHAUSTED")))
+        .then();
     }
 }
