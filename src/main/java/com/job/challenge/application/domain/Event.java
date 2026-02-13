@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
-public class S3Event {
+public class Event {
 
     private String id;
     private String bucketName;

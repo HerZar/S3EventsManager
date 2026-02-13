@@ -1,21 +1,21 @@
 package com.job.challenge.infrastructure.out.queue.mappers;
 
-import com.job.challenge.application.domain.S3Event;
+import com.job.challenge.application.domain.Event;
 import com.job.challenge.infrastructure.out.queue.dto.Message;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 public class MessageMapper {
 
-    public static Message toMessage(S3Event s3Event) {
-        String formattedDate = s3Event.getTime()
+    public static Message toMessage(Event event) {
+        String formattedDate = event.getTime()
                 .atOffset(ZoneOffset.UTC)
                 .format(DateTimeFormatter.ISO_INSTANT);
         
         return Message.builder()
-                .eventId(s3Event.getId())
-                .bucketName(s3Event.getBucketName())
-                .objectKey(s3Event.getObjectKey())
+                .eventId(event.getId())
+                .bucketName(event.getBucketName())
+                .objectKey(event.getObjectKey())
                 .eventTime(formattedDate)
                 .build();
     }

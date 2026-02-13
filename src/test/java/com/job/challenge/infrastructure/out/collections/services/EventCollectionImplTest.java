@@ -2,7 +2,7 @@ package com.job.challenge.infrastructure.out.collections.services;
 
 import com.job.challenge.application.domain.EventType;
 import com.job.challenge.application.domain.GetEventsRequest;
-import com.job.challenge.application.domain.S3Event;
+import com.job.challenge.application.domain.Event;
 import com.job.challenge.infrastructure.out.collections.documents.EventTypeDocument;
 import com.job.challenge.infrastructure.out.collections.documents.S3EventDocument;
 import com.job.challenge.infrastructure.out.collections.services.strategy.ExistenceStrategy;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class S3EventCollectionImplTest {
+class EventCollectionImplTest {
 
     @Mock
     private S3EventReactiveRepository s3EventReactiveRepository;
@@ -44,15 +44,15 @@ class S3EventCollectionImplTest {
     private ExistenceStrategy existenceStrategy;
 
     @InjectMocks
-    private S3EventCollectionImpl s3EventCollection;
+    private EventCollectionImpl s3EventCollection;
 
-    private S3Event testEvent;
+    private Event testEvent;
     private S3EventDocument testDocument;
     private GetEventsRequest pageRequest;
 
     @BeforeEach
     void setUp() {
-        testEvent = S3Event.builder()
+        testEvent = Event.builder()
                 .id("507f1f77bcf86cd799439011")
                 .bucketName("test-bucket")
                 .objectKey("test-key")
@@ -147,15 +147,6 @@ class S3EventCollectionImplTest {
                 .objectSize(testDocument.getObjectSize())
                 .build();
 
-        S3Event expectedSavedEvent = S3Event.builder()
-                .id("507f1f77bcf86cd799439012")
-                .bucketName("test-bucket")
-                .objectKey("test-key")
-                .type(EventType.OBJECT_CREATED)
-                .time(testEvent.getTime())
-                .objectSize(1024)
-                .build();
-
         when(s3EventReactiveRepository.save(any(S3EventDocument.class)))
                 .thenReturn(Mono.just(savedDocument));
 
@@ -180,7 +171,7 @@ class S3EventCollectionImplTest {
     @Test
     @DisplayName("Should save event without id and return saved event with generated id")
     void shouldSaveEventWithoutIdAndReturnSavedEventWithGeneratedId() {
-        S3Event eventWithoutId = S3Event.builder()
+        Event eventWithoutId = Event.builder()
                 .bucketName("test-bucket")
                 .objectKey("test-key")
                 .type(EventType.OBJECT_CREATED)

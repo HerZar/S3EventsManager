@@ -5,7 +5,7 @@ import com.job.challenge.infrastructure.in.rest.dto.S3EventCreateResponse;
 import com.job.challenge.infrastructure.in.rest.dto.S3EventDto;
 import com.job.challenge.infrastructure.in.rest.mappers.GetEventsRequestMapper;
 import com.job.challenge.infrastructure.in.rest.mappers.S3EventMapper;
-import com.job.challenge.interfaces.in.S3EventService;
+import com.job.challenge.interfaces.in.EventService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +22,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/s3-events")
 public class S3EventController {
 
-    private S3EventService service;
+    private EventService service;
 
     @GetMapping("/{bucketName}")
     public Flux<S3EventDto> get(@PathVariable String bucketName,
