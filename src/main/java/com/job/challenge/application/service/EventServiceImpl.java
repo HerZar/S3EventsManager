@@ -33,7 +33,7 @@ public class EventServiceImpl implements EventService {
         return eventCollection.exist(event)
                 .flatMap(exists -> {
                     if (exists) {
-                        return Mono.error(new ConflictException("S3Event already exists"));
+                        return Mono.error(new ConflictException("Event already exists"));
                     }
                     return eventCollection.save(event)
                             .onErrorMap(e -> new ConflictException("Failed operation save: " + event, "DATABASE_SAVE_ERROR"))
